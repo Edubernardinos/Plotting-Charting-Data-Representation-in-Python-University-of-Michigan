@@ -1,0 +1,184 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+df = pd.read_csv('temperature.csv')
+antes_2015= df[(df['Date'] >= '2005-01-01') & (df['Date'] < '2015-01-01')]
+ano_2015 = df[df['Date']>='2015-01-01']
+
+df = df.sort_values(by='Date')
+
+
+print(antes_2015['Date'].max())
+print(antes_2015['Date'].min())
+
+print(ano_2015['Date'].max())
+print(ano_2015['Date'].min())
+
+
+#Separa em dias e mês dps de passar pra datetime e sorteia por valores
+antes_2015['Date'] = pd.to_datetime(antes_2015['Date'])
+antes_2015['Day'] = pd.DatetimeIndex(antes_2015['Date']).day
+antes_2015['Month'] = pd.DatetimeIndex(antes_2015['Date']).month
+
+#Tirar ano bissexto
+antes_2015 = antes_2015.drop(antes_2015[(antes_2015['Day'] == 29) & (antes_2015['Month'] == 2)].index)
+
+#Agrupa dia e mes, temperatura maxima e minima
+grouped_max = antes_2015.groupby(['Month','Day']).max()
+grouped_min = antes_2015.groupby(['Month','Day']).min()
+
+grouped_max = grouped_max.reset_index()
+grouped_min= grouped_min.reset_index()
+
+
+#Acaba aqui o de antes de 2015. Aqui temos a menor temperatura e a maior temperatura de cada dia do ano
+#de 2005 - 2014. nota-se que apesar de o Date estar sempre fixado em um ano, não é necessariamente esse ano
+#que teve a temperatura mais alta do mes e dia, por padrão o computador coloca uma data fixa já que ano não foi especificado
+# e são varios
+
+
+#Função pra passar pra celsius
+
+
+ano_2015['Date'] = pd.to_datetime(ano_2015['Date'])
+ano_2015['Day'] = pd.DatetimeIndex(ano_2015['Date']).day
+ano_2015['Month'] = pd.DatetimeIndex(ano_2015['Date']).month
+
+max_2015 = ano_2015.groupby(['Month','Day']).max()
+min_2015 = ano_2015.groupby(['Month','Day']).min()
+
+
+max_2015.reset_index(inplace=True)
+min_2015.reset_index(inplace=True)
+
+
+#ajustando pra plottar
+registros_maiores = max_2015[max_2015['Data_Value']> grouped_max['Data_Value']]
+registros_menores = min_2015[min_2015['Data_Value']< grouped_min['Data_Value']]
+
+#PLOT SCATTER
+fig,ax1 = plt.subplots(figsize =(10,6))
+ax2 = ax1.twinx()
+
+#O scatter tem seu index como parametro por x, por que em cima esta relacionado
+# a qual dia ele representa. Por exemplo:o dia 39 dos 360 teve a temperatura 28.3C*
+
+ax2.scatter(registros_maiores.index,registros_maiores['Data_Value'],color='#FF3636',s=15,label='High(2005-2014)')
+ax2.scatter(registros_menores.index,registros_menores['Data_Value'],color='#475AFF',s=15,label='Low(2005-2014)')
+
+ax1.grid(True,alpha=0.4)
+
+#CRIANDO AS XTICKS
+xticks = pd.date_range(start='2015-01-01', end='2015-12-31', freq='MS').dayofyear.values
+xticks_labels = pd.to_datetime(xticks,format='%j').strftime('%b') #3 primeiras letras do mês
+
+
+ax2.plot(grouped_max['Data_Value'],'-',color='#3D3434',alpha = 1,linewidth=1,label='Max')
+ax2.plot(grouped_min['Data_Value'],'-',color='#3D3434',alpha = 0.3,linewidth=1,label='Low')
+ax2.fill_between(grouped_min.index,grouped_min['Data_Value'],
+                 grouped_max['Data_Value'],facecolor='#9C9C9C',alpha=0.3)
+ax2.set_xlim(1,365)
+
+ax2.set_xticks(xticks)
+ax2.set_xticklabels(xticks_labels,alpha=0.7)
+ax2.set_title('Menor e maior temperatura entre 2005-2014 \n E temperatura minima e máxima recorde de 2015', alpha =0.7)
+
+
+ax2.spines[:].set_visible(False)
+ax1.spines[:].set_visible(False) 
+ax1.set_ylim(-350,400)
+ax2.set_ylim(-350,400)
+
+
+
+#AXIS DA DIREITA
+yticks = pd.Series([-300,0,400])
+
+ax2.set_yticks(yticks)
+yticks_celsius= (yticks/10 *  (9/5) + 32).astype(int)
+
+ylabels_ax2 = (yticks_celsius).astype(str) + ' °F'
+ax2.set_yticklabels(ylabels_ax2, alpha = 0.7)
+
+
+#AXIS DA ESQUERDA
+ax1.set_yticks(yticks)
+ytick_ax1 = (yticks/10)
+ax1.set_yticklabels(pd.Series(ytick_ax1).astype(str) + ' °C')
+
+
+#tirar ticks
+ax1.tick_params(which='both',length=0)
+ax2.tick_params(which='both',length=0)
+
+       #AXE 1 = ESQUERDA
+       #AXE 2 = DIREITA
+
+
+ax1.set_xlabel('Mês em inglês', alpha = 0.7)
+ax1.set_ylabel('Temperatura' , alpha = 0.7)
+leg = ax2.legend(loc=4,labels = ['Low (2005-2014)','High (2005-2014)','Maior Temp','Menor Temp'])
+plt.style.use('default')
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
